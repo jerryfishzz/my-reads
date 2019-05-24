@@ -1,5 +1,4 @@
 import React from 'react'
-import './App.css'
 
 const Operations = ({ book, shelf, onChangeShelf }) => {
   const handleChange = (event) => {

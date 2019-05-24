@@ -1,6 +1,5 @@
 import React from 'react'
 import Operations from './Operations';
-import './App.css'
 
 /**
  * @description Get the authors from data

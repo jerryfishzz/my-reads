@@ -1,6 +1,5 @@
 import React from 'react'
 import Book from './Book';
-import './App.css'
 
 const BookList = ({ bookList, bookBrief, onChangeShelf }) => (
   bookList.map(book => {

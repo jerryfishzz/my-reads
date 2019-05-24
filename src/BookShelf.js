@@ -1,6 +1,5 @@
 import React from 'react'
 import BookList from './BookList';
-import './App.css'
 
 const BookShelf = ({ shelfCategory, bookList, onChangeShelf }) => {
   const shelf = shelfCategory === 'currentlyReading'

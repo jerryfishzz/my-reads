@@ -1,10 +1,9 @@
 import React from 'react'
 import * as BooksAPI from './BooksAPI'
+import BookShelf from './BookShelf'
+import { Route, Link } from 'react-router-dom'
+import Search from './Search'
 import './App.css'
-import BookShelf from './BookShelf';
-import { Route } from 'react-router-dom'
-import Search from './Search';
-import { Link } from 'react-router-dom'
 
 class BooksApp extends React.Component {
   state = {
@@ -53,12 +52,95 @@ class BooksApp extends React.Component {
       .catch(err => console.log(err))
   }
 
-  changeShelf = (book, newShelf) => {
-    if (newShelf !== 'none') {
-      BooksAPI.update(book, newShelf)
-        .then(shelves => this.initializeShelves())
-    }
-  }
+  getIds = books => books.map(book => book.id)
+
+  changeShelf = (book, newShelf) => (
+    BooksAPI.update(book, newShelf)
+      .then(shelvesFromAPI => {
+        const newBook = {...book, shelf: newShelf}
+        this.setState(({ shelves, bookBrief }) => { 
+          // Update the state first by using assumed result
+          if (newShelf !== 'none') {
+            if (book.shelf) { // For the book in the shelves already
+              return {
+                shelves: {
+                  ...shelves,
+                  [book.shelf]: shelves[book.shelf].filter(b => b.id !== book.id),
+                  [newShelf]: [...shelves[newShelf], newBook]
+                },
+                bookBrief: bookBrief.map(b => b.id === book.id 
+                  ? {...b, shelf: newShelf}
+                  : b
+                )
+              }
+            } else {
+              return {
+                shelves: {
+                  ...shelves,
+                  [newShelf]: [...shelves[newShelf], newBook]
+                },
+                bookBrief: [...bookBrief, {id: book.id, shelf: newShelf}]
+              }
+            }
+          } else {
+            return {
+              shelves: {
+                ...shelves,
+                [book.shelf]: shelves[book.shelf].filter(b => b.id !== book.id)
+              },
+              bookBrief: bookBrief.filter(b => b.id !== book.id)
+            }
+          }
+        }, () => { // Use returned API to validate the assumed result
+          const { shelves } = this.state
+
+          // Validation 1: API shelf length vs. state shelf length
+          if (
+            shelvesFromAPI.currentlyReading.length !== shelves.currentlyReading.length || 
+            shelvesFromAPI.wantToRead.length !== shelves.wantToRead.length || 
+            shelvesFromAPI.read.length !== shelves.read.length
+          ) {
+            this.initializeShelves() // If not valid then get the state from API
+            return null
+          }
+
+          // Validate 2: API book id vs. state book id
+          let consistence = true
+
+          const idsFromState = Object.entries({
+            currentlyReading: shelves.currentlyReading.map(book => book.id),
+            wantToRead: shelves.wantToRead.map(book => book.id),
+            read: shelves.read.map(book => book.id)
+          })
+
+          const idsFromAPI = Object.entries({
+            currentlyReading: shelvesFromAPI.currentlyReading,
+            wantToRead: shelvesFromAPI.wantToRead,
+            read: shelvesFromAPI.read
+          })
+
+          for (let i = 0; i < idsFromState.length; i++) {
+            for (let j = 0; j < idsFromAPI.length; j++) {
+              if (idsFromAPI[j][0] === idsFromState[i][0]) {
+                const apiIds = idsFromAPI[j][1]
+                const stateIds = idsFromState[i][1]
+                for (let k = 0; k < apiIds.length; k++) {
+                  if (stateIds.indexOf(apiIds[k]) === -1) {
+                    this.initializeShelves()
+                    consistence = false
+                    break
+                  }
+                }
+              } else {
+                continue
+              }
+              if (!consistence) break
+            }
+            if (!consistence) break
+          }
+        })
+      })
+  )
 
   componentDidMount() {
     this.initializeShelves()
