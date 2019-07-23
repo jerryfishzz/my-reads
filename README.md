@@ -9,10 +9,11 @@ This project is a simple reading list app.
 
 To get started right away:
 
-* install all project dependencies with `npm install`
-* start the development server with `npm start`
+- install all project dependencies with `npm install`
+- start the development server with `npm start`
 
 ## What's inside the project
+
 ```bash
 ├── CONTRIBUTING.md
 ├── README.md - This file.
